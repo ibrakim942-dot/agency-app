@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Агентство блогеров</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+/* VOICE: рабочий инструмент, спокойный и плотный, как родной экран Telegram
+   IDEA: карточка заказа агентства — кто, кому, сколько, что ещё не сделано
+   PICTURE: сам рабочий список и сводка «что сделать сегодня»
+   COLOUR and TYPE: цвета темы Telegram пользователя, один акцент для денег; системный шрифт
+   LAYOUT: одна колонка, нижняя панель вкладок, формы во всплывающем листе */
+:root{
+  --bg:var(--tg-theme-secondary-bg-color,light-dark(#efeff3,#0f0f10));
+  --card:var(--tg-theme-section-bg-color,var(--tg-theme-bg-color,light-dark(#fff,#1c1c1e)));
+  --ink:var(--tg-theme-text-color,light-dark(#111,#f2f2f2));
+  --hint:var(--tg-theme-hint-color,light-dark(#8a8a8e,#8d8d93));
+  --link:var(--tg-theme-link-color,#2481cc);
+  --btn:var(--tg-theme-button-color,#2481cc);
+  --btn-ink:var(--tg-theme-button-text-color,#fff);
+  --head:var(--tg-theme-section-header-text-color,var(--hint));
+  --sep:color-mix(in srgb,var(--hint) 25%,transparent);
+  --red:var(--tg-theme-destructive-text-color,#e5484d);
+  --green:#2f9e5b;--amber:#c98a00;
+  color-scheme:light dark;
+}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+button,input,select,textarea{font:inherit;color:inherit}
+main{max-width:640px;margin:0 auto;padding:12px 12px 24px}
+h1{font-size:22px;line-height:1.15;margin:6px 4px 12px}
+h2{font-size:13px;font-weight:600;color:var(--head);margin:18px 6px 6px;text-transform:none}
+.banner{background:color-mix(in srgb,var(--amber) 16%,var(--card));border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:13px}
+.banner.err{background:color-mix(in srgb,var(--red) 14%,var(--card))}
+.card{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.list .card{cursor:pointer}
+.row{display:flex;gap:8px;align-items:baseline;justify-content:space-between}
+.t{font-weight:600}
+.s{color:var(--hint);font-size:13px}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:12px;padding:3px 8px;border-radius:999px;background:color-mix(in srgb,var(--hint) 16%,transparent);white-space:nowrap}
+.chip.ok{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green)}
+.chip.bad{background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red)}
+.chip.warn{background:color-mix(in srgb,var(--amber) 20%,transparent);color:var(--amber)}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kpi{background:var(--card);border-radius:14px;padding:12px 14px}
+.kpi b{display:block;font-size:clamp(20px,6vw,26px);line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi.big{grid-column:1/-1}
+.bar{height:8px;border-radius:4px;background:color-mix(in srgb,var(--hint) 20%,transparent);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--btn);border-radius:4px}
+.funnel .r{display:grid;grid-template-columns:8.5em minmax(0,1fr) 3em;gap:8px;align-items:center;margin:6px 0}
+.funnel .r span:last-child{text-align:right}
+.todo{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--sep);cursor:pointer}
+.todo:first-child{border-top:0;padding-top:0}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:var(--red)}
+.dot.a{background:var(--amber)}
+.tools{display:flex;gap:8px;margin-bottom:8px}
+.tools input{flex:1;height:40px;border-radius:10px;border:0;background:var(--card);padding:0 12px;font-size:16px}
+.seg{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px}
+.seg button{flex:none;border:0;border-radius:999px;padding:7px 12px;background:var(--card);font-size:13px;cursor:pointer}
+.seg button.on{background:var(--btn);color:var(--btn-ink)}
+.btn{display:block;width:100%;min-height:46px;border:0;border-radius:12px;background:var(--btn);color:var(--btn-ink);font-weight:600;cursor:pointer;padding:0 14px}
+.btn.sec{background:color-mix(in srgb,var(--btn) 14%,var(--card));color:var(--link)}
+.btn.del{background:transparent;color:var(--red)}
+.btn:disabled{opacity:.55}
+.btn+.btn{margin-top:8px}
+.fab{position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;border:0;background:var(--btn);color:var(--btn-ink);font-size:28px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.22);cursor:pointer}
+nav{position:fixed;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-top:1px solid var(--sep);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{border:0;background:none;height:58px;font-size:12px;color:var(--hint);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+nav button.on{color:var(--btn)}
+.empty{text-align:center;color:var(--hint);padding:32px 16px}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10;display:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:var(--bg);border-radius:16px 16px 0 0;z-index:11;padding:14px 12px calc(20px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .22s ease}
+.sheet.open{transform:none}
+.sheet-bg.open{display:block}
+.sheet .in{max-width:640px;margin:0 auto}
+.sheet h3{font-size:18px;margin:2px 4px 12px;display:flex;justify-content:space-between;align-items:center}
+.x{border:0;background:none;color:var(--link);font-size:15px;cursor:pointer;padding:8px}
+.group{background:var(--card);border-radius:14px;padding:2px 14px;margin-bottom:12px}
+.f{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--sep)}
+.f:first-child{border-top:0}
+.f label{font-size:14px;color:var(--hint)}
+.f input,.f select,.f textarea{width:100%;border:0;background:transparent;font-size:16px;padding:6px 0;text-align:right;outline:none}
+.f textarea{text-align:left;min-height:60px;resize:vertical}
+.f.wide{grid-template-columns:1fr}
+.f.wide label{margin-bottom:-4px}
+.f input:focus-visible,.f select:focus-visible,.f textarea:focus-visible{box-shadow:0 1px 0 var(--btn)}
+.sw{justify-self:end;position:relative;width:46px;height:28px}
+.sw input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.sw span{position:absolute;inset:0;border-radius:14px;background:color-mix(in srgb,var(--hint) 35%,transparent);transition:.15s}
+.sw span::after{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw input:checked+span{background:var(--green)}
+.sw input:checked+span::after{left:20px}
+.calc{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--sep)}
+.pick{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--sep);cursor:pointer}
+.pick:first-child{border-top:0}
+.pick input{width:20px;height:20px;flex:none}
+.pick .grow{flex:1}
+pre.offer{white-space:pre-wrap;background:var(--card);border-radius:14px;padding:12px 14px;font-family:inherit;font-size:14px;line-height:1.45;margin:0 0 12px}
+.toast{position:fixed;left:50%;bottom:calc(140px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(20,20,20,.9);color:#fff;padding:9px 14px;border-radius:10px;font-size:14px;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.sheet{transition:none}}
+</style>
+</head>
+<body>
+<main id="app"><div class="empty">Загрузка…</div></main>
+<button class="fab" id="fab" aria-label="Добавить" hidden>+</button>
+<nav id="nav">
+  <button data-v="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Главная</button>
+  <button data-v="bloggers"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>Блогеры</button>
+  <button data-v="clients"><svg viewBox="0 0 24 24"><path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/></svg>Клиенты</button>
+  <button data-v="deals"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M8 15h3"/></svg>Сделки</button>
+</nav>
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="sheet"><div class="in" id="sheetIn"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+{
+/* ================== НАСТРОЙКА ==================
+   Вставьте сюда URL веб-приложения Google Apps Script (Deploy → Web app → URL).
+   Пока пусто — приложение работает в демо-режиме с данными только на этом устройстве. */
+const API_URL = '';
+
+const tg = window.Telegram && window.Telegram.WebApp;
+const LIVE = !!(API_URL && tg && tg.initData);
+const NICHES = ['Одежда', 'Еда'];
+const PLATFORMS = ['Instagram', 'Telegram', 'TikTok', 'YouTube'];
+const B_STATUS = ['Новый', 'Проверен', 'В работе', 'Отказ', 'Чёрный список'];
+const C_STATUS = ['Написали', 'Ответили', 'Созвон/встреча', 'Сделка', 'Отказ'];
+const FORMATS = ['Сторис', 'Пост', 'Рилс', 'Пакет'];
+const DEFAULT_SETTINGS = { id: 'main', markup: 30, fakeThreshold: 5, goal: 6000000 };
+
+let data = { bloggers: [], clients: [], deals: [], settings: [] };
+let view = 'home', me = null, loadError = '';
+const ui = { bq: '', bn: 'Все', cq: '', cs: 'Активные', dq: '', ds: 'Все' };
+
+/* ---------- утилиты ---------- */
+const $ = s => document.querySelector(s);
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const n = v => { const x = Number(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isFinite(x) ? x : 0; };
+const fmt = v => Math.round(n(v)).toLocaleString('ru-RU').replace(/,/g, ' ');
+const sum = v => fmt(v) + ' сум';
+const pct = v => (Math.round(v * 10) / 10).toLocaleString('ru-RU') + '%';
+const yes = v => v === true || v === 'TRUE' || v === 'true' || v === 1 || v === 'Да';
+const today = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const ddmm = s => s ? String(s).slice(8, 10) + '.' + String(s).slice(5, 7) : '';
+const settings = () => Object.assign({}, DEFAULT_SETTINGS, data.settings[0] || {});
+const haptic = t => { try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(t); } catch (e) {} };
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 2200); }
+
+/* ---------- расчёты ---------- */
+const reachPct = b => n(b.followers) ? n(b.storyReach) / n(b.followers) * 100 : null;
+const fake = b => { const r = reachPct(b); return r != null && n(b.storyReach) > 0 && r < n(settings().fakeThreshold); };
+const markupOf = d => d.markup === '' || d.markup == null ? n(settings().markup) : n(d.markup);
+const price = d => n(d.cost) * (1 + markupOf(d) / 100);
+const margin = d => price(d) - n(d.cost);
+const overdue = c => c.nextDate && c.nextDate <= today() && !['Сделка', 'Отказ'].includes(c.status);
+const bloggerName = id => { const b = data.bloggers.find(x => x.id === id); return b ? b.name : (id || '—'); };
+
+/* ---------- API ---------- */
+async function api(action, payload) {
+  if (!LIVE) return demo(action, payload || {});
+  const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(Object.assign({ action, initData: tg.initData }, payload)) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'Ошибка сервера');
+  return j;
+}
+const DEMO_KEY = 'mba-demo-v1';
+function demoLoad() {
+  try { const s = localStorage.getItem(DEMO_KEY); if (s) return JSON.parse(s); } catch (e) {}
+  const d = new Date(), iso = k => { const x = new Date(d); x.setDate(x.getDate() + k); return x.toISOString().slice(0, 10); };
+  return {
+    bloggers: [
+      { id: 'b1', name: '@tashkent_eats', niche: 'Еда', platform: 'Instagram', followers: 12400, storyReach: 1500, postReach: 3800, cityPct: 72, age: '18–30', priceStory: 150000, pricePost: 350000, verified: true, status: 'Проверен' },
+      { id: 'b2', name: '@vkusno_chilanzar', niche: 'Еда', platform: 'Instagram', followers: 7800, storyReach: 1100, postReach: 2100, cityPct: 81, age: '20–35', priceStory: 120000, pricePost: 250000, verified: true, status: 'Проверен' },
+      { id: 'b3', name: '@style.dilnoza', niche: 'Одежда', platform: 'Instagram', followers: 21000, storyReach: 700, postReach: 1900, cityPct: 55, age: '18–25', priceStory: 200000, pricePost: 450000, verified: false, status: 'Новый' },
+      { id: 'b4', name: 'Мода Ташкента (канал)', niche: 'Одежда', platform: 'Telegram', followers: 9300, storyReach: 0, postReach: 2600, cityPct: 64, age: '18–35', priceStory: 0, pricePost: 300000, verified: true, status: 'Проверен' }
+    ],
+    clients: [
+      { id: 'c1', name: 'Кафе «Сомса Хаус»', niche: 'Еда', area: 'Чиланзар', source: 'Instagram', contact: '@somsahouse', firstDate: iso(-4), status: 'Ответили', nextDate: iso(-1), pkg: '3 сторис у фуд-блогеров' },
+      { id: 'c2', name: 'Шоурум «Nur Wear»', niche: 'Одежда', area: 'Юнусабад', source: 'Instagram', contact: '@nurwear', firstDate: iso(-2), status: 'Написали', nextDate: iso(1) },
+      { id: 'c3', name: 'Бургерная «Grill 21»', niche: 'Еда', area: 'Мирабад', source: 'Вывеска', contact: '+998 90 000 00 00', firstDate: iso(-9), status: 'Сделка', nextDate: '' }
+    ],
+    deals: [
+      { id: 'd1', date: iso(-3), client: 'Бургерная «Grill 21»', niche: 'Еда', blogger: 'b1', format: 'Сторис', qty: 3, cost: 450000, markup: '', prepaid: true, published: true, bloggerPaid: false, reach: 4200, conversions: '17 промокодов', reportSent: false }
+    ],
+    settings: [Object.assign({}, DEFAULT_SETTINGS)]
+  };
+}
+let demoDb = null;
+function demoSave() { try { localStorage.setItem(DEMO_KEY, JSON.stringify(demoDb)); } catch (e) {} }
+async function demo(action, p) {
+  if (!demoDb) demoDb = demoLoad();
+  if (action === 'load') return { data: JSON.parse(JSON.stringify(demoDb)), me: { name: 'Демо' } };
+  const list = demoDb[p.entity];
+  if (action === 'save') {
+    const r = Object.assign({}, p.record);
+    if (p.entity === 'settings') r.id = 'main';
+    if (!r.id) r.id = Math.random().toString(36).slice(2, 10);
+    const i = list.findIndex(x => x.id === r.id);
+    if (i >= 0) list[i] = r; else list.push(r);
+    demoSave(); return { record: r };
+  }
+  if (action === 'delete') { const i = list.findIndex(x => x.id === p.id); if (i >= 0) list.splice(i, 1); demoSave(); return {}; }
+}
+
+/* ---------- формы ---------- */
+const FORMS = {
+  bloggers: { title: 'Блогер', fields: [
+    { k: 'name', l: 'Ник / имя', req: 1 }, { k: 'niche', l: 'Ниша', t: 'sel', o: NICHES }, { k: 'platform', l: 'Платформа', t: 'sel', o: PLATFORMS },
+    { k: 'link', l: 'Ссылка' }, { k: 'contact', l: 'Контакт' },
+    { k: 'followers', l: 'Подписчики', t: 'num' }, { k: 'storyReach', l: 'Охват сторис', t: 'num' }, { k: 'postReach', l: 'Охват поста/рилс', t: 'num' },
+    { k: 'cityPct', l: 'Аудитория в городе, %', t: 'num' }, { k: 'age', l: 'Возраст ядра' },
+    { k: 'priceStory', l: 'Цена сторис, сум', t: 'num' }, { k: 'pricePost', l: 'Цена поста, сум', t: 'num' },
+    { k: 'verified', l: 'Скрины статистики проверены', t: 'bool' }, { k: 'status', l: 'Статус', t: 'sel', o: B_STATUS },
+    { k: 'notes', l: 'Заметки', t: 'area' } ] },
+  clients: { title: 'Клиент', fields: [
+    { k: 'name', l: 'Бизнес', req: 1 }, { k: 'niche', l: 'Ниша', t: 'sel', o: NICHES }, { k: 'area', l: 'Район / адрес' },
+    { k: 'source', l: 'Где нашли' }, { k: 'contact', l: 'Контакт' }, { k: 'firstDate', l: 'Первое сообщение', t: 'date' },
+    { k: 'status', l: 'Статус', t: 'sel', o: C_STATUS }, { k: 'nextDate', l: 'Следующее касание', t: 'date' },
+    { k: 'pkg', l: 'Предложенный пакет' }, { k: 'notes', l: 'Заметки', t: 'area' } ] },
+  deals: { title: 'Сделка', fields: [
+    { k: 'date', l: 'Дата', t: 'date' }, { k: 'client', l: 'Клиент', t: 'sel', o: () => data.clients.map(c => c.name), free: 1, req: 1 },
+    { k: 'niche', l: 'Ниша', t: 'sel', o: NICHES }, { k: 'blogger', l: 'Блогер', t: 'sel', o: () => data.bloggers.map(b => [b.id, b.name]) },
+    { k: 'format', l: 'Формат', t: 'sel', o: FORMATS }, { k: 'qty', l: 'Кол-во публикаций', t: 'num' },
+    { k: 'cost', l: 'Блогеру за всё, сум', t: 'num', req: 1 }, { k: 'markup', l: 'Наценка, % (пусто = по умолч.)', t: 'num' },
+    { k: '_calc', t: 'calc' },
+    { k: 'prepaid', l: 'Предоплата от клиента', t: 'bool' }, { k: 'published', l: 'Публикация вышла', t: 'bool' },
+    { k: 'bloggerPaid', l: 'Блогеру оплачено', t: 'bool' }, { k: 'reach', l: 'Охват факт', t: 'num' },
+    { k: 'conversions', l: 'Переходы / промокод' }, { k: 'reportSent', l: 'Отчёт клиенту отправлен', t: 'bool' },
+    { k: 'notes', l: 'Заметки', t: 'area' } ] },
+  settings: { title: 'Настройки', fields: [
+    { k: 'markup', l: 'Наценка по умолчанию, %', t: 'num' }, { k: 'fakeThreshold', l: 'Порог накрутки: охват сторис от подписчиков, %', t: 'num' },
+    { k: 'goal', l: 'Цель: маржа в месяц, сум', t: 'num' } ] }
+};
+
+function fieldHtml(f, v) {
+  const id = 'f_' + f.k;
+  if (f.t === 'calc') return `<div class="calc"><span class="s">Цена клиенту</span><b class="num" id="calcP"></b></div><div class="calc"><span class="s">Ваша маржа</span><b class="num" id="calcM"></b></div>`;
+  if (f.t === 'bool') return `<div class="f"><label for="${id}">${esc(f.l)}</label><span class="sw"><input type="checkbox" id="${id}" ${yes(v) ? 'checked' : ''}><span></span></span></div>`;
+  if (f.t === 'area') return `<div class="f wide"><label for="${id}">${esc(f.l)}</label><textarea id="${id}">${esc(v)}</textarea></div>`;
+  if (f.t === 'sel') {
+    let opts = typeof f.o === 'function' ? f.o() : f.o;
+    opts = opts.map(o => Array.isArray(o) ? o : [o, o]);
+    if (f.free) return `<div class="f"><label for="${id}">${esc(f.l)}</label><input id="${id}" list="${id}_l" value="${esc(v)}" autocomplete="off"><datalist id="${id}_l">${opts.map(o => `<option value="${esc(o[1])}">`).join('')}</datalist></div>`;
+    if (v && !opts.some(o => String(o[0]) === String(v))) opts.unshift([v, v]);
+    return `<div class="f"><label for="${id}">${esc(f.l)}</label><select id="${id}"><option value="">—</option>${opts.map(o => `<option value="${esc(o[0])}" ${String(o[0]) === String(v) ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select></div>`;
+  }
+  const type = f.t === 'num' ? 'number' : f.t === 'date' ? 'date' : 'text';
+  return `<div class="f"><label for="${id}">${esc(f.l)}</label><input id="${id}" type="${type}" ${f.t === 'num' ? 'inputmode="decimal" step="any"' : ''} value="${esc(v)}"></div>`;
+}
+
+function openForm(entity, rec) {
+  const cfg = FORMS[entity];
+  const isNew = !rec || !rec.id;
+  rec = Object.assign({}, rec || {});
+  if (isNew && entity === 'clients') { rec.firstDate = rec.firstDate || today(); rec.status = rec.status || 'Написали'; }
+  if (isNew && entity === 'deals') { rec.date = rec.date || today(); rec.qty = rec.qty || 1; }
+  if (isNew && entity === 'bloggers') rec.status = rec.status || 'Новый';
+  const extra = entity === 'clients' && !isNew ? `<button class="btn sec" id="offerBtn" type="button">Собрать подборку блогеров для клиента</button>` : '';
+  const del = !isNew && entity !== 'settings' ? `<button class="btn del" id="delBtn" type="button">Удалить</button>` : '';
+  openSheet(`<h3>${isNew ? 'Новый: ' : ''}${esc(cfg.title)}<button class="x" data-close>Закрыть</button></h3>
+    <form id="frm"><div class="group">${cfg.fields.map(f => fieldHtml(f, rec[f.k])).join('')}</div>
+    <button class="btn" type="submit" id="saveBtn">Сохранить</button>${extra}${del}</form>
+    ${rec.updatedBy ? `<p class="s" style="text-align:center">Изменил(а): ${esc(rec.updatedBy)}, ${esc(rec.updatedAt)}</p>` : ''}`);
+
+  const read = () => {
+    const out = Object.assign({}, rec);
+    cfg.fields.forEach(f => {
+      if (f.t === 'calc') return;
+      const el = document.getElementById('f_' + f.k);
+      out[f.k] = f.t === 'bool' ? el.checked : f.t === 'num' ? (el.value === '' ? '' : n(el.value)) : el.value.trim();
+    });
+    return out;
+  };
+  const recalc = () => { if (entity !== 'deals') return; const d = read(); $('#calcP').textContent = sum(price(d)); $('#calcM').textContent = sum(margin(d)); };
+  recalc();
+  $('#frm').addEventListener('input', recalc);
+  if (entity === 'deals') $('#f_blogger').addEventListener('change', e => { const b = data.bloggers.find(x => x.id === e.target.value); if (b && !$('#f_niche').value) $('#f_niche').value = b.niche || ''; });
+  $('#frm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const out = read();
+    const miss = cfg.fields.find(f => f.req && !String(out[f.k]).trim());
+    if (miss) { toast('Заполните: ' + miss.l); return; }
+    if (entity === 'deals' && yes(out.published) && !yes(out.prepaid)) toast('Внимание: публикация вышла без предоплаты');
+    const btn = $('#saveBtn'); btn.disabled = true; btn.textContent = 'Сохраняю…';
+    try {
+      const r = await api('save', { entity, record: out });
+      const list = data[entity]; const i = list.findIndex(x => x.id === r.record.id);
+      if (i >= 0) list[i] = r.record; else list.push(r.record);
+      haptic('success'); closeSheet(); render(); toast('Сохранено');
+    } catch (err) { haptic('error'); toast(err.message); btn.disabled = false; btn.textContent = 'Сохранить'; }
+  });
+  const db = $('#delBtn');
+  if (db) db.addEventListener('click', async () => {
+    if (db.dataset.sure !== '1') { db.dataset.sure = '1'; db.textContent = 'Точно удалить? Нажмите ещё раз'; return; }
+    db.disabled = true;
+    try { await api('delete', { entity, id: rec.id }); data[entity] = data[entity].filter(x => x.id !== rec.id); closeSheet(); render(); toast('Удалено'); }
+    catch (err) { toast(err.message); db.disabled = false; }
+  });
+  const ob = $('#offerBtn'); if (ob) ob.addEventListener('click', () => openOffer(rec));
+}
+
+/* ---------- подборка для клиента ---------- */
+function openOffer(client) {
+  const s = settings();
+  const pool = data.bloggers.filter(b => (!client.niche || b.niche === client.niche) && b.status !== 'Отказ' && b.status !== 'Чёрный список')
+    .sort((a, b) => (yes(b.verified) - yes(a.verified)) || n(b.storyReach || b.postReach) - n(a.storyReach || a.postReach));
+  const k = 1 + n(s.markup) / 100;
+  openSheet(`<h3>Подборка для «${esc(client.name)}»<button class="x" data-close>Закрыть</button></h3>
+    <p class="s" style="margin:0 6px 8px">Цены уже с вашей наценкой ${esc(s.markup)}%. Блогеры без проверенной статистики помечены.</p>
+    <div class="seg" id="ofmt"><button class="on" data-f="story">Сторис</button><button data-f="post">Пост / рилс</button></div>
+    <div class="group" id="olist">${pool.length ? pool.map(b => `<label class="pick"><input type="checkbox" value="${esc(b.id)}" ${yes(b.verified) ? 'checked' : ''}>
+      <span class="grow"><span class="t">${esc(b.name)}</span><br><span class="s">${esc(b.platform || '')} · ${fmt(b.followers)} подп. ${yes(b.verified) ? '' : '· <span style="color:var(--amber)">не проверен</span>'}</span></span></label>`).join('')
+      : '<div class="empty">Нет блогеров в нише «' + esc(client.niche || '—') + '»</div>'}</div>
+    <h2>Текст для клиента</h2><pre class="offer" id="otext"></pre>
+    <button class="btn" id="oshare">Отправить в Telegram</button><button class="btn sec" id="ocopy">Скопировать</button>`);
+  let f = 'story';
+  const build = () => {
+    const ids = [...document.querySelectorAll('#olist input:checked')].map(i => i.value);
+    const sel = pool.filter(b => ids.includes(b.id));
+    let total = 0, reach = 0;
+    const lines = sel.map((b, i) => {
+      const p = Math.round(n(f === 'story' ? b.priceStory : b.pricePost) * k / 1000) * 1000;
+      const r = n(f === 'story' ? b.storyReach : b.postReach);
+      total += p; reach += r;
+      return `${i + 1}. ${b.name} (${b.platform || ''}) — ${fmt(b.followers)} подписчиков, охват ${f === 'story' ? 'сторис' : 'поста'} ~${fmt(r)}${b.cityPct ? ', ' + b.cityPct + '% аудитории из города' : ''} — ${sum(p)}`;
+    });
+    const txt = sel.length ? `Здравствуйте! Подобрали блогеров под ${client.niche === 'Еда' ? 'ваше заведение' : client.niche === 'Одежда' ? 'ваш магазин' : 'ваш бизнес'}:\n\n${lines.join('\n')}\n\nИтого: ${sum(total)} за ${sel.length} ${f === 'story' ? 'сторис' : 'публикаций'}, ожидаемый охват ~${fmt(reach)}.\nСами договариваемся с блогерами, контролируем выход и присылаем отчёт с охватами. Оплата до публикации.\n\nЗапускаем?` : 'Отметьте блогеров выше.';
+    $('#otext').textContent = txt;
+    return $('#otext').textContent;
+  };
+  build();
+  $('#olist').addEventListener('change', build);
+  $('#ofmt').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; f = b.dataset.f; document.querySelectorAll('#ofmt button').forEach(x => x.classList.toggle('on', x === b)); build(); });
+  $('#ocopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(build()); toast('Скопировано'); } catch (e) { toast('Не удалось скопировать: выделите текст вручную'); } });
+  $('#oshare').addEventListener('click', () => {
+    const url = 'https://t.me/share/url?url=' + encodeURIComponent(' ') + '&text=' + encodeURIComponent(build());
+    if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
+  });
+}
+
+/* ---------- лист (bottom sheet) ---------- */
+function openSheet(html) {
+  $('#sheetIn').innerHTML = html;
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+  $('#sheet').scrollTop = 0;
+  if (tg && tg.BackButton) tg.BackButton.show();
+}
+function closeSheet() {
+  $('#sheet').classList.remove('open'); $('#sheetBg').classList.remove('open');
+  if (tg && tg.BackButton) tg.BackButton.hide();
+}
+$('#sheetBg').addEventListener('click', closeSheet);
+$('#sheet').addEventListener('click', e => { if (e.target.closest('[data-close]')) closeSheet(); });
+if (tg && tg.BackButton) tg.BackButton.onClick(closeSheet);
+
+/* ---------- экраны ---------- */
+function banner() {
+  if (loadError) return `<div class="banner err"><b>Ошибка:</b> ${esc(loadError)}</div>`;
+  if (!LIVE) return `<div class="banner">Демо-режим: примерные данные, хранятся только на этом устройстве. ${API_URL ? 'Откройте приложение через бота в Telegram.' : 'Вставьте URL Apps Script в API_URL.'}</div>`;
+  return '';
+}
+
+function home() {
+  const s = settings(), m = today().slice(0, 7);
+  const md = data.deals.filter(d => String(d.date).slice(0, 7) === m);
+  const mm = md.reduce((a, d) => a + margin(d), 0), rev = md.reduce((a, d) => a + price(d), 0);
+  const avg = data.deals.length ? data.deals.reduce((a, d) => a + margin(d), 0) / data.deals.length : 0;
+  const goal = n(s.goal), left = Math.max(0, goal - mm), need = avg ? Math.ceil(left / avg) : null;
+  const todo = [];
+  data.clients.filter(overdue).forEach(c => todo.push({ e: 'clients', r: c, t: `Написать повторно: ${c.name}`, s: `Касание было назначено на ${ddmm(c.nextDate)} · ${c.status}` }));
+  data.deals.forEach(d => {
+    if (yes(d.published) && !yes(d.prepaid)) todo.push({ e: 'deals', r: d, t: `Нет предоплаты: ${d.client}`, s: 'Публикация вышла, а денег нет' });
+    if (yes(d.published) && !yes(d.bloggerPaid)) todo.push({ e: 'deals', r: d, t: `Оплатить блогеру ${bloggerName(d.blogger)}`, s: `${d.client} · ${sum(d.cost)}`, a: 1 });
+    if (yes(d.published) && !yes(d.reportSent)) todo.push({ e: 'deals', r: d, t: `Отправить отчёт: ${d.client}`, s: 'Отчёт превращает разовую сделку в постоянного клиента', a: 1 });
+  });
+  const fakeN = data.bloggers.filter(b => fake(b) && b.status !== 'Отказ').length;
+  if (fakeN) todo.push({ go: 'bloggers', t: `Проверить ${fakeN} блогер(ов) на накрутку`, s: `Охват сторис ниже ${s.fakeThreshold}% от подписчиков`, a: 1 });
+  const C = data.clients, cnt = st => C.filter(c => st.includes(c.status)).length;
+  const fun = [['Написали', C.length], ['Ответили', cnt(['Ответили', 'Созвон/встреча', 'Сделка'])], ['Созвон', cnt(['Созвон/встреча', 'Сделка'])], ['Сделка', cnt(['Сделка'])]];
+  const verified = data.bloggers.filter(b => yes(b.verified) && b.status !== 'Отказ' && b.status !== 'Чёрный список').length;
+  home._todo = todo;
+  return `${banner()}<h1>Агентство блогеров</h1>
+  <div class="kpis">
+    <div class="kpi big"><span class="s">Маржа за ${new Date().toLocaleString('ru-RU', { month: 'long' })}</span><b>${sum(mm)}</b>
+      <div class="bar"><i style="width:${goal ? Math.min(100, mm / goal * 100) : 0}%"></i></div>
+      <div class="s" style="margin-top:6px">${goal ? `Цель ${sum(goal)} · ${left ? (need != null ? `осталось ~${need} сделок по средней марже ${sum(avg)}` : 'нужна первая сделка для расчёта') : 'цель выполнена'}` : 'Задайте цель в настройках'}</div></div>
+    <div class="kpi"><span class="s">Сделок в месяце</span><b>${md.length}</b><span class="s">выручка ${sum(rev)}</span></div>
+    <div class="kpi"><span class="s">Проверенных блогеров</span><b>${verified}</b><span class="s">${verified < 10 ? 'нужно хотя бы 10' : 'можно продавать'}</span></div>
+  </div>
+  <h2>Сделать сейчас</h2>
+  <div class="card">${todo.length ? todo.map((x, i) => `<div class="todo" data-todo="${i}"><span class="dot ${x.a ? 'a' : ''}"></span><span><span class="t">${esc(x.t)}</span><br><span class="s">${esc(x.s)}</span></span></div>`).join('') : '<div class="s">Всё сделано. Время писать новым клиентам.</div>'}</div>
+  <h2>Воронка клиентов</h2>
+  <div class="card funnel">${fun.map(([l, v]) => `<div class="r"><span class="s">${l}</span><div class="bar" style="margin:0"><i style="width:${C.length ? v / C.length * 100 : 0}%"></i></div><span class="num">${v}</span></div>`).join('')}
+    <div class="s" style="margin-top:8px">${C.length >= 30 ? `Конверсия в сделку: ${pct(fun[3][1] / C.length * 100)}` : `Конверсию считаем после 30 написанных клиентов (сейчас ${C.length}).`}</div></div>
+  <button class="btn sec" id="setBtn" style="margin-top:14px">Настройки: наценка, порог накрутки, цель</button>`;
+}
+
+function bloggers() {
+  const q = ui.bq.toLowerCase();
+  const list = data.bloggers.filter(b => (ui.bn === 'Все' || b.niche === ui.bn) && (!q || JSON.stringify(b).toLowerCase().includes(q)))
+    .sort((a, b) => (yes(b.verified) - yes(a.verified)) || String(a.name).localeCompare(String(b.name)));
+  return `${banner()}<h1>Блогеры <span class="s">${data.bloggers.length}</span></h1>
+  <div class="tools"><input id="bq" placeholder="Поиск" value="${esc(ui.bq)}" type="search"></div>
+  <div class="seg" id="bn">${['Все', ...NICHES].map(x => `<button class="${ui.bn === x ? 'on' : ''}" data-x="${x}">${x}</button>`).join('')}</div>
+  <div class="list">${list.length ? list.map(b => { const r = reachPct(b); return `<div class="card" data-open="bloggers" data-id="${esc(b.id)}">
+    <div class="row"><span class="t">${esc(b.name)}</span><span class="num s">${fmt(b.followers)} подп.</span></div>
+    <div class="s">${esc([b.niche, b.platform, b.age].filter(Boolean).join(' · '))}</div>
+    <div class="chips">${yes(b.verified) ? '<span class="chip ok">Статистика проверена</span>' : '<span class="chip warn">Без скринов</span>'}
+      ${fake(b) ? '<span class="chip bad">Проверить накрутку</span>' : ''}
+      ${r != null && n(b.storyReach) ? `<span class="chip">Сторис ${pct(r)}</span>` : ''}
+      ${n(b.priceStory) ? `<span class="chip num">Сторис ${sum(b.priceStory)}</span>` : ''}
+      ${n(b.pricePost) ? `<span class="chip num">Пост ${sum(b.pricePost)}</span>` : ''}
+      ${b.status && b.status !== 'Проверен' ? `<span class="chip">${esc(b.status)}</span>` : ''}</div></div>`; }).join('')
+    : `<div class="empty">${data.bloggers.length ? 'Ничего не найдено' : 'Добавьте первого блогера кнопкой «+». Без скриншотов статистики не отмечайте «проверен».'}</div>`}</div>`;
+}
+
+function clients() {
+  const q = ui.cq.toLowerCase();
+  const tabs = ['Активные', 'Касание сегодня', 'Сделка', 'Отказ', 'Все'];
+  const list = data.clients.filter(c => {
+    if (q && !JSON.stringify(c).toLowerCase().includes(q)) return false;
+    if (ui.cs === 'Активные') return !['Сделка', 'Отказ'].includes(c.status);
+    if (ui.cs === 'Касание сегодня') return overdue(c);
+    if (ui.cs === 'Все') return true;
+    return c.status === ui.cs;
+  }).sort((a, b) => String(a.nextDate || '9999').localeCompare(String(b.nextDate || '9999')));
+  return `${banner()}<h1>Клиенты <span class="s">${data.clients.length}</span></h1>
+  <div class="tools"><input id="cq" placeholder="Поиск" value="${esc(ui.cq)}" type="search"></div>
+  <div class="seg" id="cs">${tabs.map(x => `<button class="${ui.cs === x ? 'on' : ''}" data-x="${x}">${x}${x === 'Касание сегодня' ? ' ' + data.clients.filter(overdue).length : ''}</button>`).join('')}</div>
+  <div class="list">${list.length ? list.map(c => `<div class="card" data-open="clients" data-id="${esc(c.id)}">
+    <div class="row"><span class="t">${esc(c.name)}</span><span class="s">${esc(c.niche || '')}</span></div>
+    <div class="s">${esc([c.area, c.contact].filter(Boolean).join(' · '))}</div>
+    <div class="chips"><span class="chip ${c.status === 'Сделка' ? 'ok' : c.status === 'Отказ' ? 'bad' : ''}">${esc(c.status || '—')}</span>
+      ${c.nextDate && !['Сделка', 'Отказ'].includes(c.status) ? `<span class="chip ${overdue(c) ? 'bad' : ''}">Касание ${ddmm(c.nextDate)}</span>` : ''}
+      ${c.pkg ? `<span class="chip">${esc(c.pkg)}</span>` : ''}</div></div>`).join('')
+    : `<div class="empty">${data.clients.length ? 'Здесь пусто' : 'Добавляйте каждый бизнес, которому написали, и ставьте дату следующего касания.'}</div>`}</div>`;
+}
+
+function deals() {
+  const q = ui.dq.toLowerCase();
+  const tabs = ['Все', 'Ждут предоплату', 'Блогеру не оплачено', 'Без отчёта'];
+  const list = data.deals.filter(d => {
+    if (q && !(JSON.stringify(d) + bloggerName(d.blogger)).toLowerCase().includes(q)) return false;
+    if (ui.ds === 'Ждут предоплату') return !yes(d.prepaid);
+    if (ui.ds === 'Блогеру не оплачено') return yes(d.published) && !yes(d.bloggerPaid);
+    if (ui.ds === 'Без отчёта') return yes(d.published) && !yes(d.reportSent);
+    return true;
+  }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const tot = data.deals.reduce((a, d) => a + margin(d), 0);
+  return `${banner()}<h1>Сделки <span class="s">${data.deals.length} · маржа ${sum(tot)}</span></h1>
+  <div class="tools"><input id="dq" placeholder="Поиск" value="${esc(ui.dq)}" type="search"></div>
+  <div class="seg" id="ds">${tabs.map(x => `<button class="${ui.ds === x ? 'on' : ''}" data-x="${x}">${x}</button>`).join('')}</div>
+  <div class="list">${list.length ? list.map(d => `<div class="card" data-open="deals" data-id="${esc(d.id)}">
+    <div class="row"><span class="t">${esc(d.client)}</span><span class="num t" style="color:var(--green)">+${sum(margin(d))}</span></div>
+    <div class="s">${ddmm(d.date)} · ${esc(bloggerName(d.blogger))} · ${esc(d.qty || 1)} × ${esc(d.format || '')} · клиенту ${sum(price(d))}</div>
+    <div class="chips">
+      <span class="chip ${yes(d.prepaid) ? 'ok' : yes(d.published) ? 'bad' : 'warn'}">${yes(d.prepaid) ? 'Предоплата есть' : 'Нет предоплаты'}</span>
+      <span class="chip ${yes(d.published) ? 'ok' : ''}">${yes(d.published) ? 'Вышла' : 'Не вышла'}</span>
+      ${yes(d.published) ? `<span class="chip ${yes(d.bloggerPaid) ? 'ok' : 'warn'}">${yes(d.bloggerPaid) ? 'Блогеру оплачено' : 'Блогеру не оплачено'}</span>
+      <span class="chip ${yes(d.reportSent) ? 'ok' : 'warn'}">${yes(d.reportSent) ? 'Отчёт отправлен' : 'Нет отчёта'}</span>` : ''}
+      ${n(d.reach) ? `<span class="chip num">Охват ${fmt(d.reach)}</span>` : ''}</div></div>`).join('')
+    : `<div class="empty">${data.deals.length ? 'Здесь пусто' : 'Первая сделка — главная цель. Правило: клиент платит до публикации, блогер получает после.'}</div>`}</div>`;
+}
+
+const VIEWS = { home, bloggers, clients, deals };
+function render() {
+  const y = window.scrollY;
+  const active = document.activeElement && document.activeElement.id;
+  $('#app').innerHTML = VIEWS[view]();
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === view));
+  $('#fab').hidden = view === 'home';
+  if (active && ['bq', 'cq', 'dq'].includes(active)) { const el = document.getElementById(active); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  window.scrollTo(0, y);
+}
+
+/* ---------- события ---------- */
+$('#nav').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; view = b.dataset.v; window.scrollTo(0, 0); render(); });
+$('#fab').addEventListener('click', () => openForm(view));
+$('#app').addEventListener('click', e => {
+  const c = e.target.closest('[data-open]');
+  if (c) { const r = data[c.dataset.open].find(x => x.id === c.dataset.id); openForm(c.dataset.open, r); return; }
+  const t = e.target.closest('[data-todo]');
+  if (t) { const x = home._todo[+t.dataset.todo]; if (x.go) { view = x.go; render(); } else openForm(x.e, x.r); return; }
+  const seg = e.target.closest('.seg button');
+  if (seg) { const key = { bn: 'bn', cs: 'cs', ds: 'ds' }[seg.parentElement.id]; ui[key] = seg.dataset.x; render(); return; }
+  if (e.target.id === 'setBtn') openForm('settings', settings());
+});
+$('#app').addEventListener('input', e => { if (['bq', 'cq', 'dq'].includes(e.target.id)) { ui[e.target.id] = e.target.value; render(); } });
+
+/* ---------- старт ---------- */
+(async () => {
+  if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+  try {
+    const r = await api('load');
+    data = Object.assign({ bloggers: [], clients: [], deals: [], settings: [] }, r.data);
+    me = r.me;
+  } catch (err) { loadError = err.message; }
+  render();
+})();
+}
+</script>
+</body>
+</html>
