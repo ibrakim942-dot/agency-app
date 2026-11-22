@@ -86,6 +86,8 @@ nav button.on{color:var(--btn)}
 .f label{font-size:14px;color:var(--hint)}
 .f input,.f select,.f textarea{width:100%;border:0;background:transparent;font-size:16px;padding:6px 0;text-align:right;outline:none}
 .f textarea{text-align:left;min-height:60px;resize:vertical}
+.f select option{background:var(--card);color:var(--ink)}
+.f select{cursor:pointer}
 .f.wide{grid-template-columns:1fr}
 .f.wide label{margin-bottom:-4px}
 .f input:focus-visible,.f select:focus-visible,.f textarea:focus-visible{box-shadow:0 1px 0 var(--btn)}
@@ -497,7 +499,7 @@ $('#app').addEventListener('input', e => { if (['bq', 'cq', 'dq'].includes(e.tar
 
 /* ---------- старт ---------- */
 (async () => {
-  if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+  if (tg) { try { tg.ready(); tg.expand(); if (tg.colorScheme) document.documentElement.style.colorScheme = tg.colorScheme; } catch (e) {} }
   try {
     const r = await api('load');
     data = Object.assign({ bloggers: [], clients: [], deals: [], settings: [] }, r.data);
