@@ -5,107 +5,201 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Агентство блогеров</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* VOICE: рабочий инструмент, спокойный и плотный, как родной экран Telegram
-   IDEA: карточка заказа агентства — кто, кому, сколько, что ещё не сделано
-   PICTURE: сам рабочий список и сводка «что сделать сегодня»
-   COLOUR and TYPE: цвета темы Telegram пользователя, один акцент для денег; системный шрифт
-   LAYOUT: одна колонка, нижняя панель вкладок, формы во всплывающем листе */
+/* VOICE: премиальный пульт агентства — строгий, дорогой, спокойный
+   IDEA: приватный банковский счёт: чёрная карта, золотые волосяные линии
+   PICTURE: карта «Маржа» с золотой цифрой и тонкой линией цели
+   COLOUR and TYPE: чёрный и графит, золото как единственный акцент; Manrope 300 для цифр
+   LAYOUT: одна колонка, плавающая нижняя панель, формы в листе снизу с чипами вместо списков */
 :root{
-  --bg:var(--tg-theme-secondary-bg-color,light-dark(#efeff3,#0f0f10));
-  --card:var(--tg-theme-section-bg-color,var(--tg-theme-bg-color,light-dark(#fff,#1c1c1e)));
-  --ink:var(--tg-theme-text-color,light-dark(#111,#f2f2f2));
-  --hint:var(--tg-theme-hint-color,light-dark(#8a8a8e,#8d8d93));
-  --link:var(--tg-theme-link-color,#2481cc);
-  --btn:var(--tg-theme-button-color,#2481cc);
-  --btn-ink:var(--tg-theme-button-text-color,#fff);
-  --head:var(--tg-theme-section-header-text-color,var(--hint));
-  --sep:color-mix(in srgb,var(--hint) 25%,transparent);
-  --red:var(--tg-theme-destructive-text-color,#e5484d);
-  --green:#2f9e5b;--amber:#c98a00;
-  color-scheme:light dark;
+  --bg:#f2f1ee;--card:#fff;--ink:#17150f;--hint:#7a756c;--line:rgba(23,21,15,.08);
+  --acc:#ff5a36;--acc-ink:#fff;--acc-soft:rgba(255,90,54,.12);
+  --green:#169c55;--green-soft:rgba(22,156,85,.12);--amber:#c47a00;--amber-soft:rgba(196,122,0,.13);
+  --red:#e0383e;--red-soft:rgba(224,56,62,.12);--blue:#3b6cff;--blue-soft:rgba(59,108,255,.12);
+  --hero:#1b1915;--hero-ink:#f6f2ea;--hero-hint:#a49d91;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(0,0,0,.05);
+  color-scheme:light;
+}
+:root[data-theme=dark]{
+  --bg:#0f0e0d;--card:#1b1a18;--ink:#f3efe8;--hint:#968f85;--line:rgba(255,255,255,.07);
+  --acc:#ff6b4a;--acc-soft:rgba(255,107,74,.16);--green:#34c472;--green-soft:rgba(52,196,114,.15);
+  --amber:#e9a23b;--amber-soft:rgba(233,162,59,.15);--red:#ff5a5f;--red-soft:rgba(255,90,95,.15);
+  --blue:#6e91ff;--blue-soft:rgba(110,145,255,.16);--hero:#24211d;--shadow:none;color-scheme:dark;
 }
 *{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Manrope,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+body{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 button,input,select,textarea{font:inherit;color:inherit}
-main{max-width:640px;margin:0 auto;padding:12px 12px 24px}
-h1{font-size:22px;line-height:1.15;margin:6px 4px 12px}
-h2{font-size:13px;font-weight:600;color:var(--head);margin:18px 6px 6px;text-transform:none}
-.banner{background:color-mix(in srgb,var(--amber) 16%,var(--card));border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:13px}
-.banner.err{background:color-mix(in srgb,var(--red) 14%,var(--card))}
-.card{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:8px}
-.list .card{cursor:pointer}
+main{max-width:640px;margin:0 auto;padding:14px 14px 24px}
+.top{display:flex;align-items:center;gap:12px;margin:4px 2px 16px}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-weight:800;font-size:17px;flex:none}
+.top .t1{font-weight:800;font-size:18px;line-height:1.1}
+.top .t2{color:var(--hint);font-size:13px}
+h1{font-size:26px;line-height:1.1;font-weight:800;margin:6px 2px 14px;letter-spacing:-.01em}
+h1 .s{font-size:15px;font-weight:600}
+h2{font-size:13px;font-weight:700;color:var(--hint);margin:22px 4px 8px}
+.banner{background:var(--amber-soft);color:var(--ink);border-radius:14px;padding:11px 14px;margin-bottom:12px;font-size:13px}
+.banner.err{background:var(--red-soft)}
+.card{background:var(--card);border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow)}
+.list .card{cursor:pointer;display:flex;gap:12px;align-items:flex-start;transition:transform .12s}
+.list .card:active{transform:scale(.985)}
+.av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;flex:none;background:var(--blue-soft);color:var(--blue)}
+.av.food{background:var(--acc-soft);color:var(--acc)}
+.av.cl{border-radius:12px;background:var(--line);color:var(--ink)}
+.grow{flex:1}
 .row{display:flex;gap:8px;align-items:baseline;justify-content:space-between}
-.t{font-weight:600}
+.t{font-weight:700}
 .s{color:var(--hint);font-size:13px}
 .num{font-variant-numeric:tabular-nums;white-space:nowrap}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.chip{font-size:12px;padding:3px 8px;border-radius:999px;background:color-mix(in srgb,var(--hint) 16%,transparent);white-space:nowrap}
-.chip.ok{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green)}
-.chip.bad{background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red)}
-.chip.warn{background:color-mix(in srgb,var(--amber) 20%,transparent);color:var(--amber)}
-.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.kpi{background:var(--card);border-radius:14px;padding:12px 14px}
-.kpi b{display:block;font-size:clamp(20px,6vw,26px);line-height:1.1;font-variant-numeric:tabular-nums}
-.kpi.big{grid-column:1/-1}
-.bar{height:8px;border-radius:4px;background:color-mix(in srgb,var(--hint) 20%,transparent);overflow:hidden;margin-top:10px}
-.bar i{display:block;height:100%;background:var(--btn);border-radius:4px}
-.funnel .r{display:grid;grid-template-columns:8.5em minmax(0,1fr) 3em;gap:8px;align-items:center;margin:6px 0}
-.funnel .r span:last-child{text-align:right}
-.todo{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--sep);cursor:pointer}
-.todo:first-child{border-top:0;padding-top:0}
-.dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:var(--red)}
-.dot.a{background:var(--amber)}
-.tools{display:flex;gap:8px;margin-bottom:8px}
-.tools input{flex:1;height:40px;border-radius:10px;border:0;background:var(--card);padding:0 12px;font-size:16px}
-.seg{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px}
-.seg button{flex:none;border:0;border-radius:999px;padding:7px 12px;background:var(--card);font-size:13px;cursor:pointer}
-.seg button.on{background:var(--btn);color:var(--btn-ink)}
-.btn{display:block;width:100%;min-height:46px;border:0;border-radius:12px;background:var(--btn);color:var(--btn-ink);font-weight:600;cursor:pointer;padding:0 14px}
-.btn.sec{background:color-mix(in srgb,var(--btn) 14%,var(--card));color:var(--link)}
-.btn.del{background:transparent;color:var(--red)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.chip{font-size:12px;font-weight:600;padding:4px 9px;border-radius:999px;background:var(--line);white-space:nowrap}
+.chip.ok{background:var(--green-soft);color:var(--green)}
+.chip.bad{background:var(--red-soft);color:var(--red)}
+.chip.warn{background:var(--amber-soft);color:var(--amber)}
+.hero{background:var(--hero);color:var(--hero-ink);border-radius:22px;padding:18px 18px 16px;display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:12px;align-items:center;margin-bottom:10px}
+.hero .lbl{color:var(--hero-hint);font-size:13px;font-weight:600}
+.hero b{display:block;font-size:clamp(26px,8vw,34px);line-height:1.05;font-weight:800;margin:6px 0 8px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.hero .sub{color:var(--hero-hint);font-size:13px}
+.ring{width:96px;height:96px;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring span{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:18px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kpi{background:var(--card);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow)}
+.kpi .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;margin-bottom:10px}
+.kpi .ic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2}
+.kpi b{display:block;font-size:26px;line-height:1.05;font-weight:800;font-variant-numeric:tabular-nums}
+.todo{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.todo:first-child{border-top:0;padding-top:2px}
+.todo:last-child{padding-bottom:2px}
+.ti{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--red-soft);color:var(--red)}
+.ti.a{background:var(--amber-soft);color:var(--amber)}
+.ti svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.2}
+.go{color:var(--hint);font-size:18px;flex:none}
+.funnel .r{display:grid;grid-template-columns:6.5em minmax(0,1fr) 2.5em;gap:10px;align-items:center;margin:9px 0}
+.funnel .r span:last-child{text-align:right;font-weight:700}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:5px;min-width:0}
+.tools{display:flex;gap:8px;margin-bottom:10px}
+.tools input{flex:1;height:44px;border-radius:14px;border:0;background:var(--card);padding:0 14px;font-size:16px;box-shadow:var(--shadow);outline:none}
+.tools input:focus-visible{box-shadow:0 0 0 2px var(--acc)}
+.seg{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:none;border:0;border-radius:999px;padding:8px 14px;background:var(--card);font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow)}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.btn{display:block;width:100%;min-height:50px;border:0;border-radius:16px;background:var(--acc);color:var(--acc-ink);font-weight:700;font-size:16px;cursor:pointer;padding:0 14px}
+.btn.sec{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.btn.del{background:transparent;color:var(--red);box-shadow:none}
 .btn:disabled{opacity:.55}
 .btn+.btn{margin-top:8px}
-.fab{position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;border:0;background:var(--btn);color:var(--btn-ink);font-size:28px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.22);cursor:pointer}
-nav{position:fixed;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-top:1px solid var(--sep);padding-bottom:env(safe-area-inset-bottom);z-index:5}
-nav button{border:0;background:none;height:58px;font-size:12px;color:var(--hint);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
-nav button.on{color:var(--btn)}
-.empty{text-align:center;color:var(--hint);padding:32px 16px}
-.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10;display:none}
-.sheet{position:fixed;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:var(--bg);border-radius:16px 16px 0 0;z-index:11;padding:14px 12px calc(20px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .22s ease}
+.fab{position:fixed;right:18px;bottom:calc(92px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:18px;border:0;background:var(--acc);color:var(--acc-ink);font-size:30px;line-height:1;box-shadow:0 8px 22px rgba(255,90,54,.4);cursor:pointer;z-index:4}
+nav{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));max-width:616px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-radius:22px;padding:6px;z-index:5;box-shadow:0 8px 30px rgba(0,0,0,.14);border:1px solid var(--line)}
+nav button{border:0;background:none;height:56px;border-radius:16px;font-size:11px;font-weight:600;color:var(--hint);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9}
+nav button.on{color:var(--acc);background:var(--acc-soft)}
+.empty{text-align:center;color:var(--hint);padding:36px 20px;background:var(--card);border-radius:18px;box-shadow:var(--shadow)}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:93vh;overflow:auto;background:var(--bg);border-radius:24px 24px 0 0;z-index:11;padding:8px 14px calc(22px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:2px auto 10px}
 .sheet.open{transform:none}
 .sheet-bg.open{display:block}
 .sheet .in{max-width:640px;margin:0 auto}
-.sheet h3{font-size:18px;margin:2px 4px 12px;display:flex;justify-content:space-between;align-items:center}
-.x{border:0;background:none;color:var(--link);font-size:15px;cursor:pointer;padding:8px}
-.group{background:var(--card);border-radius:14px;padding:2px 14px;margin-bottom:12px}
-.f{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--sep)}
+.sheet h3{font-size:20px;font-weight:800;margin:2px 4px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.x{border:0;background:var(--card);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;padding:8px 14px;border-radius:999px;flex:none}
+.group{background:var(--card);border-radius:18px;padding:2px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.f{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr);gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .f:first-child{border-top:0}
-.f label{font-size:14px;color:var(--hint)}
-.f input,.f select,.f textarea{width:100%;border:0;background:transparent;font-size:16px;padding:6px 0;text-align:right;outline:none}
-.f textarea{text-align:left;min-height:60px;resize:vertical}
-.f select option{background:var(--card);color:var(--ink)}
-.f select{cursor:pointer}
-.f.wide{grid-template-columns:1fr}
-.f.wide label{margin-bottom:-4px}
-.f input:focus-visible,.f select:focus-visible,.f textarea:focus-visible{box-shadow:0 1px 0 var(--btn)}
-.sw{justify-self:end;position:relative;width:46px;height:28px}
-.sw input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
-.sw span{position:absolute;inset:0;border-radius:14px;background:color-mix(in srgb,var(--hint) 35%,transparent);transition:.15s}
-.sw span::after{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.f label,.f .lb{font-size:14px;color:var(--hint);font-weight:500}
+.f input,.f textarea{width:100%;border:0;background:transparent;font-size:16px;padding:6px 0;text-align:right;outline:none;font-weight:600}
+.f textarea{text-align:left;min-height:64px;resize:vertical;font-weight:500}
+.f.wide{grid-template-columns:1fr;gap:6px}
+.f input:focus-visible,.f textarea:focus-visible{box-shadow:0 2px 0 var(--acc)}
+.f input[type=date]{color-scheme:inherit}
+.pk{display:flex;flex-wrap:wrap;gap:6px}
+.pk button{border:0;border-radius:999px;padding:8px 13px;background:var(--line);font-size:14px;font-weight:600;cursor:pointer;min-height:36px}
+.pk button.on{background:var(--ink);color:var(--bg)}
+.pk-q{width:100%;border:0;background:var(--line);border-radius:10px;padding:8px 12px;font-size:15px;margin-bottom:8px;outline:none}
+.sug{display:flex;flex-wrap:wrap;gap:6px;grid-column:1/-1}
+.sug:empty{display:none}
+.sug button{border:0;border-radius:999px;padding:6px 11px;background:var(--line);font-size:13px;cursor:pointer}
+.sw{justify-self:end;position:relative;width:50px;height:30px}
+.sw input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;z-index:1}
+.sw span{position:absolute;inset:0;border-radius:15px;background:var(--line);transition:.15s}
+.sw span::after{content:"";position:absolute;width:26px;height:26px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.15s;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .sw input:checked+span{background:var(--green)}
-.sw input:checked+span::after{left:20px}
-.calc{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--sep)}
-.pick{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--sep);cursor:pointer}
+.sw input:checked+span::after{left:22px}
+.calc{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0;border-top:1px solid var(--line)}
+.calc b{font-size:17px}
+.calc.m b{color:var(--green)}
+.pick{display:flex;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
 .pick:first-child{border-top:0}
-.pick input{width:20px;height:20px;flex:none}
-.pick .grow{flex:1}
-pre.offer{white-space:pre-wrap;background:var(--card);border-radius:14px;padding:12px 14px;font-family:inherit;font-size:14px;line-height:1.45;margin:0 0 12px}
-.toast{position:fixed;left:50%;bottom:calc(140px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(20,20,20,.9);color:#fff;padding:9px 14px;border-radius:10px;font-size:14px;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+.pick input{width:22px;height:22px;flex:none;accent-color:var(--acc)}
+pre.offer{white-space:pre-wrap;background:var(--card);border-radius:18px;padding:14px 16px;font-family:inherit;font-size:14px;line-height:1.5;margin:0 0 14px;box-shadow:var(--shadow)}
+.toast{position:fixed;left:50%;bottom:calc(170px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
 .toast.on{opacity:1}
-@media (prefers-reduced-motion:reduce){.sheet{transition:none}}
+.foot{text-align:center;margin-top:16px}
+@media (prefers-reduced-motion:reduce){.sheet,.list .card{transition:none}}
+
+/* ===== премиум: чёрный + золото ===== */
+:root,:root[data-theme=dark],:root[data-theme=light]{
+  --bg:#080808;--card:#121212;--ink:#efe9dd;--hint:#8a8378;--line:rgba(255,255,255,.07);
+  --gold:#d6b46e;--gold2:#f1dba6;--gline:rgba(214,180,110,.22);
+  --acc:#d6b46e;--acc-ink:#0b0a08;--acc-soft:rgba(214,180,110,.13);
+  --green:#7cc59a;--green-soft:rgba(124,197,154,.12);--amber:#e0b35c;--amber-soft:rgba(224,179,92,.13);
+  --red:#e7736f;--red-soft:rgba(231,115,111,.13);--blue:#c8ccd3;--blue-soft:rgba(200,204,211,.1);
+  --hero:#0f0e0c;--hero-ink:#efe9dd;--hero-hint:#8a8378;--shadow:none;color-scheme:dark;
+}
+body{background:radial-gradient(120% 60% at 100% 0,rgba(214,180,110,.07),transparent 60%) fixed,var(--bg)}
+.card,.kpi,.empty,.group,.tools input,pre.offer{border:1px solid var(--line)}
+.logo{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#0b0a08;border-radius:50%;font-weight:700;letter-spacing:.02em}
+.top .t1{font-weight:600}
+h1{font-weight:300;font-size:30px;letter-spacing:-.01em}
+h1 .s{color:var(--gold)}
+h2{text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:600;color:var(--hint)}
+.hero{display:block;border:1px solid var(--gline);background:linear-gradient(160deg,#17150f 0%,#0c0c0b 55%);position:relative;overflow:hidden;padding:20px 20px 18px}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(214,180,110,.16),transparent 70%);pointer-events:none}
+.hero .lbl{text-transform:uppercase;letter-spacing:.16em;font-size:11px;color:var(--gold)}
+.hero b{font-weight:300;font-size:clamp(34px,11vw,46px);margin:10px 0 16px;background:linear-gradient(180deg,var(--gold2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.gl{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.gl .ln{flex:1;height:2px;background:rgba(255,255,255,.08);border-radius:1px;overflow:hidden}
+.gl .ln i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));min-width:2px}
+.gl span{font-size:13px;color:var(--gold);font-weight:600;font-variant-numeric:tabular-nums}
+.kpi .ic{border:1px solid var(--gline);background:transparent!important;color:var(--gold)!important}
+.kpi b{font-weight:300;font-size:30px}
+.ti{background:transparent;border:1px solid var(--red-soft)}
+.ti.a{background:transparent;border:1px solid var(--gline);color:var(--gold)}
+.go{color:var(--gold)}
+.bar{height:3px;background:rgba(255,255,255,.07)}
+.bar i{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.funnel .r span:last-child{font-weight:300;font-size:17px}
+.av{background:transparent;border:1px solid rgba(200,204,211,.3);color:var(--blue);font-weight:600}
+.av.food{background:transparent;border-color:var(--gline);color:var(--gold)}
+.av.cl{border:1px solid var(--line);background:transparent;color:var(--ink)}
+.chip{background:rgba(255,255,255,.05);font-weight:500}
+.seg button{background:transparent;border:1px solid var(--line);color:var(--hint)}
+.seg button.on{background:var(--gold);border-color:var(--gold);color:#0b0a08}
+.pk button{background:transparent;border:1px solid var(--line)}
+.pk button.on{background:var(--gold);border-color:var(--gold);color:#0b0a08}
+.btn{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#0b0a08;letter-spacing:.02em}
+.btn.sec{background:transparent;color:var(--gold);border:1px solid var(--gline)}
+.btn.del{background:transparent}
+.fab{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#0b0a08;border-radius:50%;box-shadow:0 10px 30px rgba(214,180,110,.3);font-weight:300}
+nav{background:rgba(14,14,14,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--gline);box-shadow:0 12px 40px rgba(0,0,0,.6)}
+nav button.on{background:transparent;color:var(--gold)}
+nav button.on::after{content:"";width:18px;height:2px;border-radius:1px;background:var(--gold);margin-top:1px}
+.sheet{background:#0b0b0b;border-top:1px solid var(--gline)}
+.sheet h3{font-weight:300;font-size:24px}
+.x{background:transparent;border:1px solid var(--line)}
+.calc b{font-weight:400}
+.calc.m b{color:var(--gold)}
+.sw input:checked+span{background:var(--gold)}
+.sw span::after{background:#efe9dd}
+.f input:focus-visible,.f textarea:focus-visible{box-shadow:0 1px 0 var(--gold)}
+.tools input:focus-visible{box-shadow:0 0 0 1px var(--gold)}
+.toast{background:var(--gold);color:#0b0a08}
+.banner{border:1px solid var(--gline);background:rgba(214,180,110,.07)}
+.banner.err{border-color:var(--red-soft);background:var(--red-soft)}
 </style>
 </head>
 <body>
@@ -244,15 +338,16 @@ const FORMS = {
 
 function fieldHtml(f, v) {
   const id = 'f_' + f.k;
-  if (f.t === 'calc') return `<div class="calc"><span class="s">Цена клиенту</span><b class="num" id="calcP"></b></div><div class="calc"><span class="s">Ваша маржа</span><b class="num" id="calcM"></b></div>`;
+  if (f.t === 'calc') return `<div class="calc"><span class="s">Цена клиенту</span><b class="num" id="calcP"></b></div><div class="calc m"><span class="s">Ваша маржа</span><b class="num" id="calcM"></b></div>`;
   if (f.t === 'bool') return `<div class="f"><label for="${id}">${esc(f.l)}</label><span class="sw"><input type="checkbox" id="${id}" ${yes(v) ? 'checked' : ''}><span></span></span></div>`;
   if (f.t === 'area') return `<div class="f wide"><label for="${id}">${esc(f.l)}</label><textarea id="${id}">${esc(v)}</textarea></div>`;
   if (f.t === 'sel') {
     let opts = typeof f.o === 'function' ? f.o() : f.o;
     opts = opts.map(o => Array.isArray(o) ? o : [o, o]);
-    if (f.free) return `<div class="f"><label for="${id}">${esc(f.l)}</label><input id="${id}" list="${id}_l" value="${esc(v)}" autocomplete="off"><datalist id="${id}_l">${opts.map(o => `<option value="${esc(o[1])}">`).join('')}</datalist></div>`;
+    if (f.free) return `<div class="f"><label for="${id}">${esc(f.l)}</label><input id="${id}" value="${esc(v)}" autocomplete="off" data-sug="${id}_s"><div class="sug" id="${id}_s"></div></div>`;
     if (v && !opts.some(o => String(o[0]) === String(v))) opts.unshift([v, v]);
-    return `<div class="f"><label for="${id}">${esc(f.l)}</label><select id="${id}"><option value="">—</option>${opts.map(o => `<option value="${esc(o[0])}" ${String(o[0]) === String(v) ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select></div>`;
+    const q = opts.length > 8 ? `<input class="pk-q" placeholder="Найти" data-pkq="${id}">` : '';
+    return `<div class="f wide"><span class="lb">${esc(f.l)}</span>${q}<input type="hidden" id="${id}" value="${esc(v)}"><div class="pk" data-pk="${id}">${opts.map(o => `<button type="button" data-v="${esc(o[0])}" class="${String(o[0]) === String(v) ? 'on' : ''}">${esc(o[1])}</button>`).join('')}</div></div>`;
   }
   const type = f.t === 'num' ? 'number' : f.t === 'date' ? 'date' : 'text';
   return `<div class="f"><label for="${id}">${esc(f.l)}</label><input id="${id}" type="${type}" ${f.t === 'num' ? 'inputmode="decimal" step="any"' : ''} value="${esc(v)}"></div>`;
@@ -284,7 +379,7 @@ function openForm(entity, rec) {
   const recalc = () => { if (entity !== 'deals') return; const d = read(); $('#calcP').textContent = sum(price(d)); $('#calcM').textContent = sum(margin(d)); };
   recalc();
   $('#frm').addEventListener('input', recalc);
-  if (entity === 'deals') $('#f_blogger').addEventListener('change', e => { const b = data.bloggers.find(x => x.id === e.target.value); if (b && !$('#f_niche').value) $('#f_niche').value = b.niche || ''; });
+  if (entity === 'deals') $('#f_blogger').addEventListener('change', e => { const b = data.bloggers.find(x => x.id === e.target.value); if (b && !$('#f_niche').value) setPick('f_niche', b.niche || ''); });
   $('#frm').addEventListener('submit', async e => {
     e.preventDefault();
     const out = read();
@@ -348,6 +443,32 @@ function openOffer(client) {
   });
 }
 
+/* ---------- чипы вместо выпадающих списков ---------- */
+function setPick(id, v) {
+  const h = document.getElementById(id); if (!h) return;
+  h.value = v;
+  document.querySelectorAll(`[data-pk="${id}"] button`).forEach(b => b.classList.toggle('on', b.dataset.v === String(v)));
+  h.dispatchEvent(new Event('change', { bubbles: true }));
+  const frm = $('#frm'); if (frm) frm.dispatchEvent(new Event('input'));
+}
+function suggest(inp) {
+  const box = document.getElementById(inp.dataset.sug); if (!box) return;
+  const q = inp.value.trim().toLowerCase();
+  const names = data.clients.map(c => c.name).filter(x => x && x.toLowerCase().includes(q) && x !== inp.value).slice(0, 6);
+  box.innerHTML = names.map(x => `<button type="button" data-fill="${esc(inp.id)}">${esc(x)}</button>`).join('');
+}
+$('#sheet').addEventListener('click', e => {
+  const b = e.target.closest('[data-pk] button');
+  if (b) { const id = b.parentElement.dataset.pk; setPick(id, b.classList.contains('on') ? '' : b.dataset.v); try { tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged(); } catch (x) {} return; }
+  const fl = e.target.closest('[data-fill]');
+  if (fl) { const i = document.getElementById(fl.dataset.fill); i.value = fl.textContent; fl.parentElement.innerHTML = ''; return; }
+});
+$('#sheet').addEventListener('input', e => {
+  if (e.target.dataset.pkq) { const q = e.target.value.toLowerCase(); document.querySelectorAll(`[data-pk="${e.target.dataset.pkq}"] button`).forEach(b => b.hidden = !b.textContent.toLowerCase().includes(q)); }
+  if (e.target.dataset.sug) suggest(e.target);
+});
+$('#sheet').addEventListener('focusin', e => { if (e.target.dataset && e.target.dataset.sug) suggest(e.target); });
+
 /* ---------- лист (bottom sheet) ---------- */
 function openSheet(html) {
   $('#sheetIn').innerHTML = html;
@@ -364,6 +485,19 @@ $('#sheet').addEventListener('click', e => { if (e.target.closest('[data-close]'
 if (tg && tg.BackButton) tg.BackButton.onClick(closeSheet);
 
 /* ---------- экраны ---------- */
+const IC = {
+  money: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>',
+  user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>',
+  msg: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/></svg>',
+  pay: '<svg viewBox="0 0 24 24"><path d="M12 3v18M17 7H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"/></svg>',
+  doc: '<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h5"/></svg>',
+  warn: '<svg viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>',
+  gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>'
+};
+const initials = s => { const w = String(s || '?').replace(/[@«»"'.]/g, ' ').trim().split(/[\s_]+/).filter(Boolean); return ((w[0] || '?')[0] + ((w[1] || '')[0] || '')).toUpperCase(); };
+const av = (name, niche, cl) => `<span class="av ${cl ? 'cl' : niche === 'Еда' ? 'food' : ''}">${esc(initials(name))}</span>`;
+const hello = () => { const h = new Date().getHours(); return h < 5 ? 'Доброй ночи' : h < 12 ? 'Доброе утро' : h < 18 ? 'Добрый день' : 'Добрый вечер'; };
+
 function banner() {
   if (loadError) return `<div class="banner err"><b>Ошибка:</b> ${esc(loadError)}</div>`;
   if (!LIVE) return `<div class="banner">Демо-режим: примерные данные, хранятся только на этом устройстве. ${API_URL ? 'Откройте приложение через бота в Telegram.' : 'Вставьте URL Apps Script в API_URL.'}</div>`;
@@ -377,32 +511,35 @@ function home() {
   const avg = data.deals.length ? data.deals.reduce((a, d) => a + margin(d), 0) / data.deals.length : 0;
   const goal = n(s.goal), left = Math.max(0, goal - mm), need = avg ? Math.ceil(left / avg) : null;
   const todo = [];
-  data.clients.filter(overdue).forEach(c => todo.push({ e: 'clients', r: c, t: `Написать повторно: ${c.name}`, s: `Касание было назначено на ${ddmm(c.nextDate)} · ${c.status}` }));
+  data.clients.filter(overdue).forEach(c => todo.push({ i: 'msg', e: 'clients', r: c, t: `Написать повторно: ${c.name}`, s: `Касание было назначено на ${ddmm(c.nextDate)} · ${c.status}` }));
   data.deals.forEach(d => {
-    if (yes(d.published) && !yes(d.prepaid)) todo.push({ e: 'deals', r: d, t: `Нет предоплаты: ${d.client}`, s: 'Публикация вышла, а денег нет' });
-    if (yes(d.published) && !yes(d.bloggerPaid)) todo.push({ e: 'deals', r: d, t: `Оплатить блогеру ${bloggerName(d.blogger)}`, s: `${d.client} · ${sum(d.cost)}`, a: 1 });
-    if (yes(d.published) && !yes(d.reportSent)) todo.push({ e: 'deals', r: d, t: `Отправить отчёт: ${d.client}`, s: 'Отчёт превращает разовую сделку в постоянного клиента', a: 1 });
+    if (yes(d.published) && !yes(d.prepaid)) todo.push({ i: 'money', e: 'deals', r: d, t: `Нет предоплаты: ${d.client}`, s: 'Публикация вышла, а денег нет' });
+    if (yes(d.published) && !yes(d.bloggerPaid)) todo.push({ i: 'pay', e: 'deals', r: d, t: `Оплатить блогеру ${bloggerName(d.blogger)}`, s: `${d.client} · ${sum(d.cost)}`, a: 1 });
+    if (yes(d.published) && !yes(d.reportSent)) todo.push({ i: 'doc', e: 'deals', r: d, t: `Отправить отчёт: ${d.client}`, s: 'Отчёт превращает разовую сделку в постоянного клиента', a: 1 });
   });
   const fakeN = data.bloggers.filter(b => fake(b) && b.status !== 'Отказ').length;
-  if (fakeN) todo.push({ go: 'bloggers', t: `Проверить ${fakeN} блогер(ов) на накрутку`, s: `Охват сторис ниже ${s.fakeThreshold}% от подписчиков`, a: 1 });
+  if (fakeN) todo.push({ i: 'warn', go: 'bloggers', t: `Проверить ${fakeN} блогер(ов) на накрутку`, s: `Охват сторис ниже ${s.fakeThreshold}% от подписчиков`, a: 1 });
   const C = data.clients, cnt = st => C.filter(c => st.includes(c.status)).length;
   const fun = [['Написали', C.length], ['Ответили', cnt(['Ответили', 'Созвон/встреча', 'Сделка'])], ['Созвон', cnt(['Созвон/встреча', 'Сделка'])], ['Сделка', cnt(['Сделка'])]];
   const verified = data.bloggers.filter(b => yes(b.verified) && b.status !== 'Отказ' && b.status !== 'Чёрный список').length;
   home._todo = todo;
-  return `${banner()}<h1>Агентство блогеров</h1>
+  const p = goal ? Math.min(1, mm / goal) : 0;
+  const nm = me && me.name && me.name !== 'Демо' ? ', ' + String(me.name).split(' ')[0] : '';
+  const dt = new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+  return `${banner()}<div class="top"><span class="logo">A</span><span><div class="t1">${esc(hello() + nm)}</div><div class="t2">${esc(dt)}</div></span></div>
+  <div class="hero"><div class="lbl">Маржа · ${new Date().toLocaleString('ru-RU', { month: 'long' })}</div><b class="num">${sum(mm)}</b>
+    <div class="gl"><div class="ln"><i style="width:${p * 100}%"></i></div><span>${Math.round(p * 100)}%</span></div>
+    <div class="sub">${goal ? `Цель ${sum(goal)} · ${left ? (need != null ? `ещё ~${need} сделок по ${sum(avg)}` : 'нужна первая сделка для расчёта') : 'цель выполнена'}` : 'Задайте цель в настройках'}</div></div>
   <div class="kpis">
-    <div class="kpi big"><span class="s">Маржа за ${new Date().toLocaleString('ru-RU', { month: 'long' })}</span><b>${sum(mm)}</b>
-      <div class="bar"><i style="width:${goal ? Math.min(100, mm / goal * 100) : 0}%"></i></div>
-      <div class="s" style="margin-top:6px">${goal ? `Цель ${sum(goal)} · ${left ? (need != null ? `осталось ~${need} сделок по средней марже ${sum(avg)}` : 'нужна первая сделка для расчёта') : 'цель выполнена'}` : 'Задайте цель в настройках'}</div></div>
-    <div class="kpi"><span class="s">Сделок в месяце</span><b>${md.length}</b><span class="s">выручка ${sum(rev)}</span></div>
-    <div class="kpi"><span class="s">Проверенных блогеров</span><b>${verified}</b><span class="s">${verified < 10 ? 'нужно хотя бы 10' : 'можно продавать'}</span></div>
+    <div class="kpi"><div class="ic" style="background:var(--green-soft);color:var(--green)">${IC.money}</div><b>${md.length}</b><span class="s">сделок · ${sum(rev)}</span></div>
+    <div class="kpi"><div class="ic" style="background:var(--blue-soft);color:var(--blue)">${IC.user}</div><b>${verified}<span class="s" style="font-size:15px;font-weight:600"> / 10</span></b><span class="s">${verified < 10 ? 'проверенных блогеров' : 'можно продавать'}</span></div>
   </div>
-  <h2>Сделать сейчас</h2>
-  <div class="card">${todo.length ? todo.map((x, i) => `<div class="todo" data-todo="${i}"><span class="dot ${x.a ? 'a' : ''}"></span><span><span class="t">${esc(x.t)}</span><br><span class="s">${esc(x.s)}</span></span></div>`).join('') : '<div class="s">Всё сделано. Время писать новым клиентам.</div>'}</div>
+  <h2>Сделать сейчас${todo.length ? ' · ' + todo.length : ''}</h2>
+  <div class="card">${todo.length ? todo.map((x, i) => `<div class="todo" data-todo="${i}"><span class="ti ${x.a ? 'a' : ''}">${IC[x.i] || IC.warn}</span><span class="grow"><span class="t">${esc(x.t)}</span><br><span class="s">${esc(x.s)}</span></span><span class="go">›</span></div>`).join('') : '<div class="s">Всё сделано. Время писать новым клиентам.</div>'}</div>
   <h2>Воронка клиентов</h2>
-  <div class="card funnel">${fun.map(([l, v]) => `<div class="r"><span class="s">${l}</span><div class="bar" style="margin:0"><i style="width:${C.length ? v / C.length * 100 : 0}%"></i></div><span class="num">${v}</span></div>`).join('')}
-    <div class="s" style="margin-top:8px">${C.length >= 30 ? `Конверсия в сделку: ${pct(fun[3][1] / C.length * 100)}` : `Конверсию считаем после 30 написанных клиентов (сейчас ${C.length}).`}</div></div>
-  <button class="btn sec" id="setBtn" style="margin-top:14px">Настройки: наценка, порог накрутки, цель</button>`;
+  <div class="card funnel">${fun.map(([l, v]) => `<div class="r"><span class="s">${l}</span><div class="bar"><i style="width:${C.length ? v / C.length * 100 : 0}%"></i></div><span class="num">${v}</span></div>`).join('')}
+    <div class="s" style="margin-top:10px">${C.length >= 30 ? `Конверсия в сделку: ${pct(fun[3][1] / C.length * 100)}` : `Конверсию считаем после 30 написанных клиентов (сейчас ${C.length}).`}</div></div>
+  <div class="foot"><button class="btn sec" id="setBtn">Настройки: наценка, накрутка, цель</button></div>`;
 }
 
 function bloggers() {
@@ -412,7 +549,7 @@ function bloggers() {
   return `${banner()}<h1>Блогеры <span class="s">${data.bloggers.length}</span></h1>
   <div class="tools"><input id="bq" placeholder="Поиск" value="${esc(ui.bq)}" type="search"></div>
   <div class="seg" id="bn">${['Все', ...NICHES].map(x => `<button class="${ui.bn === x ? 'on' : ''}" data-x="${x}">${x}</button>`).join('')}</div>
-  <div class="list">${list.length ? list.map(b => { const r = reachPct(b); return `<div class="card" data-open="bloggers" data-id="${esc(b.id)}">
+  <div class="list">${list.length ? list.map(b => { const r = reachPct(b); return `<div class="card" data-open="bloggers" data-id="${esc(b.id)}">${av(b.name, b.niche)}<div class="grow">
     <div class="row"><span class="t">${esc(b.name)}</span><span class="num s">${fmt(b.followers)} подп.</span></div>
     <div class="s">${esc([b.niche, b.platform, b.age].filter(Boolean).join(' · '))}</div>
     <div class="chips">${yes(b.verified) ? '<span class="chip ok">Статистика проверена</span>' : '<span class="chip warn">Без скринов</span>'}
@@ -420,7 +557,7 @@ function bloggers() {
       ${r != null && n(b.storyReach) ? `<span class="chip">Сторис ${pct(r)}</span>` : ''}
       ${n(b.priceStory) ? `<span class="chip num">Сторис ${sum(b.priceStory)}</span>` : ''}
       ${n(b.pricePost) ? `<span class="chip num">Пост ${sum(b.pricePost)}</span>` : ''}
-      ${b.status && b.status !== 'Проверен' ? `<span class="chip">${esc(b.status)}</span>` : ''}</div></div>`; }).join('')
+      ${b.status && b.status !== 'Проверен' ? `<span class="chip">${esc(b.status)}</span>` : ''}</div></div></div>`; }).join('')
     : `<div class="empty">${data.bloggers.length ? 'Ничего не найдено' : 'Добавьте первого блогера кнопкой «+». Без скриншотов статистики не отмечайте «проверен».'}</div>`}</div>`;
 }
 
@@ -437,12 +574,12 @@ function clients() {
   return `${banner()}<h1>Клиенты <span class="s">${data.clients.length}</span></h1>
   <div class="tools"><input id="cq" placeholder="Поиск" value="${esc(ui.cq)}" type="search"></div>
   <div class="seg" id="cs">${tabs.map(x => `<button class="${ui.cs === x ? 'on' : ''}" data-x="${x}">${x}${x === 'Касание сегодня' ? ' ' + data.clients.filter(overdue).length : ''}</button>`).join('')}</div>
-  <div class="list">${list.length ? list.map(c => `<div class="card" data-open="clients" data-id="${esc(c.id)}">
+  <div class="list">${list.length ? list.map(c => `<div class="card" data-open="clients" data-id="${esc(c.id)}">${av(c.name, c.niche, 1)}<div class="grow">
     <div class="row"><span class="t">${esc(c.name)}</span><span class="s">${esc(c.niche || '')}</span></div>
     <div class="s">${esc([c.area, c.contact].filter(Boolean).join(' · '))}</div>
     <div class="chips"><span class="chip ${c.status === 'Сделка' ? 'ok' : c.status === 'Отказ' ? 'bad' : ''}">${esc(c.status || '—')}</span>
       ${c.nextDate && !['Сделка', 'Отказ'].includes(c.status) ? `<span class="chip ${overdue(c) ? 'bad' : ''}">Касание ${ddmm(c.nextDate)}</span>` : ''}
-      ${c.pkg ? `<span class="chip">${esc(c.pkg)}</span>` : ''}</div></div>`).join('')
+      ${c.pkg ? `<span class="chip">${esc(c.pkg)}</span>` : ''}</div></div></div>`).join('')
     : `<div class="empty">${data.clients.length ? 'Здесь пусто' : 'Добавляйте каждый бизнес, которому написали, и ставьте дату следующего касания.'}</div>`}</div>`;
 }
 
@@ -460,7 +597,7 @@ function deals() {
   return `${banner()}<h1>Сделки <span class="s">${data.deals.length} · маржа ${sum(tot)}</span></h1>
   <div class="tools"><input id="dq" placeholder="Поиск" value="${esc(ui.dq)}" type="search"></div>
   <div class="seg" id="ds">${tabs.map(x => `<button class="${ui.ds === x ? 'on' : ''}" data-x="${x}">${x}</button>`).join('')}</div>
-  <div class="list">${list.length ? list.map(d => `<div class="card" data-open="deals" data-id="${esc(d.id)}">
+  <div class="list">${list.length ? list.map(d => `<div class="card" data-open="deals" data-id="${esc(d.id)}"><div class="grow">
     <div class="row"><span class="t">${esc(d.client)}</span><span class="num t" style="color:var(--green)">+${sum(margin(d))}</span></div>
     <div class="s">${ddmm(d.date)} · ${esc(bloggerName(d.blogger))} · ${esc(d.qty || 1)} × ${esc(d.format || '')} · клиенту ${sum(price(d))}</div>
     <div class="chips">
@@ -468,7 +605,7 @@ function deals() {
       <span class="chip ${yes(d.published) ? 'ok' : ''}">${yes(d.published) ? 'Вышла' : 'Не вышла'}</span>
       ${yes(d.published) ? `<span class="chip ${yes(d.bloggerPaid) ? 'ok' : 'warn'}">${yes(d.bloggerPaid) ? 'Блогеру оплачено' : 'Блогеру не оплачено'}</span>
       <span class="chip ${yes(d.reportSent) ? 'ok' : 'warn'}">${yes(d.reportSent) ? 'Отчёт отправлен' : 'Нет отчёта'}</span>` : ''}
-      ${n(d.reach) ? `<span class="chip num">Охват ${fmt(d.reach)}</span>` : ''}</div></div>`).join('')
+      ${n(d.reach) ? `<span class="chip num">Охват ${fmt(d.reach)}</span>` : ''}</div></div></div>`).join('')
     : `<div class="empty">${data.deals.length ? 'Здесь пусто' : 'Первая сделка — главная цель. Правило: клиент платит до публикации, блогер получает после.'}</div>`}</div>`;
 }
 
@@ -499,7 +636,14 @@ $('#app').addEventListener('input', e => { if (['bq', 'cq', 'dq'].includes(e.tar
 
 /* ---------- старт ---------- */
 (async () => {
-  if (tg) { try { tg.ready(); tg.expand(); if (tg.colorScheme) document.documentElement.style.colorScheme = tg.colorScheme; } catch (e) {} }
+  const theme = () => {
+    let dark = false;
+    try { dark = tg && tg.colorScheme ? tg.colorScheme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) {}
+    document.documentElement.dataset.theme = 'dark';
+    try { const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(); tg && tg.setHeaderColor && tg.setHeaderColor(bg); tg && tg.setBackgroundColor && tg.setBackgroundColor(bg); } catch (e) {}
+  };
+  theme();
+  if (tg) { try { tg.ready(); tg.expand(); tg.onEvent && tg.onEvent('themeChanged', theme); } catch (e) {} }
   try {
     const r = await api('load');
     data = Object.assign({ bloggers: [], clients: [], deals: [], settings: [] }, r.data);
